@@ -1,106 +1,91 @@
 // functions/scan.js
 
 exports.handler = async function(event, context) {
-    const clientId = process.env.TOSS_CLIENT_ID;
-    const clientSecret = process.env.TOSS_CLIENT_SECRET;
-
-    // 기본 가상 데이터 저장소 (토스 인증 실패 시 우회 작동용)
-    const mockStocks = [
-        { name: "삼성전자", score: 94, price: "72,300원" },
-        { name: "SK하이닉스", score: 91, price: "182,500원" },
-        { name: "셀트리온", score: 88, price: "195,200원" }
-    ];
-
     try {
-        if (!clientId || !clientSecret) {
-            throw new Error("환경변수 키 누락");
-        }
+        // [1단계] 분석하고 싶은 국내 대표 급등/단타 후보 종목 세팅
+        // (종목코드 뒤에 .KS는 코스피, .KQ는 코스닥을 뜻합니다)
+        const stocks = [
+            { symbol: "005930.KS", name: "삼성전자" },
+            { symbol: "000660.KS", name: "SK하이닉스" },
+            { symbol: "068270.KS", name: "셀트리온" },
+            { symbol: "005380.KS", name: "현대차" },
+            { symbol: "000270.KS", name: "기아" },
+            { symbol: "086520.KQ", name: "에코프로" },
+            { symbol: "005490.KS", name: "POSCO홀딩스" }
+        ];
 
-        const authKey = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+        // [2단계] 공개된 실시간 금융 데이터망(Yahoo Finance API 망)에 주가 요청하기
+        const symbolsPath = stocks.map(s => s.symbol).join(',');
         
-        // [1단계] 토큰 발급 시도
-        let tokenResponse = await fetch('https://openapi.tossinvest.com/oauth2/token', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Basic ${authKey}`,
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: new URLSearchParams({ grant_type: 'client_credentials' })
-        });
-
-        // 403이나 401 에러 발생 시 서버를 터뜨리지 않고 catch 블록으로 던집니다.
-        if (!tokenResponse.ok) {
-            throw new Error(`AUTH_ERROR_${tokenResponse.status}`);
-        }
-
-        const tokenData = await tokenResponse.json();
-        const accessToken = tokenData.access_token;
-
-        // [2단계] 시세조회 시도
-        const targetSymbols = "005930,000660,068270";
-        let marketResponse = await fetch(`https://openapi.tossinvest.com/api/v1/prices?symbols=${targetSymbols}`, {
+        // Netlify 내장 fetch 기능을 사용하여 실시간 시세 데이터 수집
+        let response = await fetch(`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbolsPath}`, {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Accept': 'application/json'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             }
         });
 
-        if (!marketResponse.ok) {
-            throw new Error(`MARKET_ERROR_${marketResponse.status}`);
+        if (!response.ok) {
+            throw new Error("공개 주가 데이터망 응답 실패");
         }
 
-        const priceData = await marketResponse.json();
-        const tossResult = priceData.result || [];
+        const data = await response.json();
+        const quoteResults = data.quoteResponse?.result || [];
 
-        const nameMap = { "005930": "삼성전자", "000660": "SK하이닉스", "068270": "셀트리온" };
-        const finalStockList = tossResult.map(item => {
-            const rawPrice = parseInt(item.lastPrice || "0");
+        // [3단계] 진짜 실시간 데이터를 바탕으로 단타 점수 계산하기 (알고리즘)
+        const finalStockList = stocks.map(stock => {
+            // 야후 금융 망에서 해당 종목의 실시간 주가 정보 매칭
+            const realInfo = quoteResults.find(q => q.symbol === stock.symbol);
+            
+            // 실시간 변동률(정확한 진짜 데이터) 가져오기
+            const changePercent = realInfo ? realInfo.regularMarketChangePercent : 0;
+            const currentPrice = realInfo ? realInfo.regularMarketPrice : 0;
+
+            // 단타 점수 부여 공식: 오늘 상승률이 높을수록 점수가 높게 책정됨
+            // 기본 80점에 상승률 * 2배를 더해 실시간 점수 변동 효과를 줍니다.
+            let dantaScore = Math.floor(80 + (changePercent * 2));
+            if (dantaScore > 100) dantaScore = 100;
+            if (dantaScore < 0) dantaScore = 0;
+
             return {
-                name: nameMap[item.symbol] || `종목(${item.symbol})`,
-                score: 85 + (rawPrice % 10),
-                price: rawPrice.toLocaleString() + "원"
+                name: stock.name,
+                score: dantaScore,
+                price: currentPrice.toLocaleString() + "원",
+                change: (changePercent >= 0 ? "+" : "") + changePercent.toFixed(2) + "%"
             };
-        }).sort((a, b) => b.score - a.score);
+        }).sort((a, b) => b.score - a.score); // 점수 높은 순 정렬
 
+        const bestStock = finalStockList[0];
+
+        // [4단계] 최종 성공 데이터 대시보드 화면으로 전송
         return {
             statusCode: 200,
             headers: { "Content-Type": "application/json; charset=utf-8" },
             body: JSON.stringify({
                 success: true,
-                top10: finalStockList,
+                top10: finalStockList.slice(0, 3), // 상위 3개 노출
                 ai: {
-                    target: finalStockList[0].name,
-                    decision: "실시간 연동중",
-                    confidence: 95,
-                    reasons: ["토스증권 실시간 공식 데이터 반영 중입니다."]
+                    target: bestStock.name,
+                    decision: "실시간 분석중",
+                    confidence: 90,
+                    reasons: [
+                        "공개 금융 시세 서버와 성공적으로 동기화되었습니다.",
+                        `현재 ${bestStock.name} 종목이 당일 실시간 변동률 ${bestStock.change}로 단타 조건에 가장 근접함.`,
+                        "30초 주기로 진짜 주가와 상승률을 추적하여 순위를 재계산합니다."
+                    ]
                 }
             })
         };
 
     } catch (error) {
-        // ❌ 만약 토스 키 인증에 실패하더라도 화면을 멈추지 않고 가상 엔진으로 매끄럽게 구동시킵니다.
-        const dynamicStocks = mockStocks.map(s => ({
-            name: s.name,
-            score: s.score + (Math.floor(Math.random() * 5) - 2)
-        })).sort((a, b) => b.score - a.score);
-
+        // 혹시라도 망 에러 발생 시 예외 안전장치
         return {
             statusCode: 200,
             headers: { "Content-Type": "application/json; charset=utf-8" },
             body: JSON.stringify({
                 success: true,
-                top10: dynamicStocks,
-                ai: {
-                    target: dynamicStocks[0].name,
-                    decision: "안전 모드 가동",
-                    confidence: 88,
-                    reasons: [
-                        "⚠️ 현재 토스 API 키 설정 혹은 권한에 점검이 필요합니다. (403/401 거절 발생)",
-                        "시스템 마비를 방지하기 위해 단타 분석 엔진이 '안전 모드(가상 시세)'로 작동 중입니다.",
-                        "Netlify 환경변수(공백 제거)를 재설정하시면 즉시 실시간 데이터로 교체됩니다."
-                    ]
-                }
+                top10: [{ name: "⚠️ 금융망 일시 지연", score: 0 }],
+                ai: { target: "연결 확인", decision: "재시도중", confidence: 0, reasons: [error.message] }
             })
         };
     }
