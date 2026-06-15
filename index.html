@@ -3,128 +3,182 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>실시간 단타 스캔 V2</title>
+    <title>실시간 종목 스캔 V2</title>
     <style>
         :root {
             --bg-color: #0f172a;
             --card-bg: #1e293b;
-            --text-color: #f8fafc;
-            --primary: #3b82f6;
-            --accent: #ef4444;
-            --success: #22c55e;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-up: #ef4444;   /* 상승 빨간색 */
+            --accent-down: #3b82f6; /* 하락 파란색 */
+            --ai-gold: #eab308;
         }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--bg-color);
-            color: var(--text-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 480px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+        .header h1 { font-size: 20px; margin: 0; }
+        .timer { font-size: 14px; color: var(--ai-gold); font-weight: bold; }
+        
+        .section-title { font-size: 16px; color: var(--text-muted); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+        
+        .stock-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+        .stock-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255,255,255,0.03);
+            padding: 14px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .stock-info { display: flex; align-items: center; gap: 12px; }
+        .rank { font-weight: bold; color: var(--ai-gold); width: 20px; }
+        .name { font-weight: 600; }
+        
+        .stock-meta { text-align: right; }
+        .price-row { display: flex; items: center; gap: 8px; justify-content: flex-end; }
+        .price { font-weight: bold; font-size: 15px; }
+        /* 등락률 스타일 지정을 위한 클래스 */
+        .change { font-size: 13px; font-weight: bold; }
+        .up { color: var(--accent-up); }
+        .down { color: var(--accent-down); }
+        .score-badge { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+        .condition-box {
+            background: rgba(255,255,255,0.02);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 24px;
+            font-size: 13px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .cond-item { display: flex; justify-content: space-between; color: var(--text-muted); }
+        .cond-item span:last-child { color: var(--text-main); font-weight: 500; }
+
+        .ai-box {
+            border: 1px solid rgba(234, 179, 8, 0.3);
+            background: rgba(234, 179, 8, 0.05);
+            border-radius: 12px;
             padding: 16px;
         }
-        .container { max-width: 500px; margin: 0 auto; }
-        header { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #334155; }
-        .logo { font-weight: bold; font-size: 1.2rem; }
-        .timer { font-size: 0.9rem; color: #94a3b8; }
-        .section { background: var(--card-bg); border-radius: 12px; padding: 16px; margin-top: 16px; }
-        h2 { font-size: 1.1rem; margin-top: 0; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
-        .rank-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #334155; }
-        .rank-item:last-child { border: none; }
-        .rank-number { font-weight: bold; color: var(--primary); width: 24px; }
-        .stock-name { flex-grow: 1; font-weight: 500; }
-        .score { background: #2d3748; padding: 2px 8px; border-radius: 6px; font-size: 0.85rem; color: #f59e0b; }
-        .cond-badge { background: #334155; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; display: inline-block; margin: 4px; }
-        .ai-box { border: 2px solid var(--success); background: rgba(34, 197, 94, 0.1); }
-        .reason-list { margin: 8px 0 0 0; padding-left: 20px; font-size: 0.9rem; color: #cbd5e1; }
-        .loading { text-align: center; color: #94a3b8; padding: 20px; }
+        .ai-title { color: var(--ai-gold); font-weight: bold; font-size: 15px; margin-bottom: 8px; }
+        .ai-recommend { font-size: 16px; font-weight: bold; margin-bottom: 12px; }
+        .ai-reasons { font-size: 13px; color: var(--text-muted); padding-left: 18px; margin: 0; display: flex; flex-direction: column; gap: 6px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <header>
-        <div class="logo">📈 실시간 종목 스캔 <span style="font-size:0.8rem; color:var(--primary)">V2</span></div>
-        <div class="timer">🔄 <span id="countdown">30</span>초 뒤 갱신</div>
-    </header>
-
-    <div class="section">
-        <h2>🔥 오늘의 단타 TOP 10</h2>
-        <div id="top10-list">
-            <div class="loading">데이터 분석 중...</div>
-        </div>
+    <div class="header">
+        <h1>📈 실시간 종목 스캔 V2</h1>
+        <div class="timer" id="timer">🔄 30초 뒤 갱신</div>
     </div>
 
-    <div class="section">
-        <h2>🚀 급등주 검색 조건</h2>
-        <div class="cond-badge">상승률 +3% 이상</div>
-        <div class="cond-badge">거래량 증가</div>
+    <div class="section-title">🔥 오늘의 단타 TOP 5</div>
+    <div class="stock-list" id="stockList">
+        <!-- 자바스크립트가 여기에 종목들을 채워넣습니다 -->
     </div>
 
-    <div class="section">
-        <h2>💎 눌림목 검색 조건</h2>
-        <div class="cond-badge">전고점 돌파 후</div>
-        <div class="cond-badge">-2% ~ -5% 조정</div>
+    <div class="condition-box">
+        <div class="cond-item"><span>🚀 급등주 검색 조건</span><span>상승률 +3% 이상 거래량 증가</span></div>
+        <div class="cond-item"><span>💎 눌림목 검색 조건</span><span>전고점 돌파 후 -2% ~ -5% 조정</span></div>
     </div>
 
-    <div class="section ai-box">
-        <h2>⚡ AI 매수 판단: <span id="ai-decision" style="color:var(--success)">분석 중</span></h2>
-        <div style="font-size: 0.95rem; font-weight: bold;">추천 종목: <span id="ai-target">-</span> (<span id="ai-confidence">0</span>%)</div>
-        <ul class="reason-list" id="ai-reasons">
-            <li>데이터 수집 중...</li>
+    <div class="ai-box">
+        <div class="ai-title">⚡ AI 매수 판단 : <span id="aiDecision">스캔중</span></div>
+        <div class="ai-recommend">추천 종목: <span id="aiTarget">-</span> (<span id="aiConf">0</span>%)</div>
+        <ul class="ai-reasons" id="aiReasons">
+            <li>데이터 수집 엔진 가동 중...</li>
         </ul>
     </div>
 </div>
 
 <script>
-    const timerEl = document.getElementById('countdown');
-    let timeLeft = 30;
+    let countdown = 30;
+    const timerEl = document.getElementById('timer');
 
-    // Netlify 백엔드 함수에서 데이터를 가져오는 함수
+    // 30초 카운트다운 전광판 로직
+    setInterval(() => {
+        countdown--;
+        if (countdown < 0) countdown = 30;
+        timerEl.innerText = `🔄 ${countdown}초 뒤 갱신`;
+    }, 1000);
+
+    // 백엔드(Netlify Function)에서 실시간 주가 정보를 받아오는 함수
     async function fetchScanData() {
         try {
-            const response = await fetch('/.netlify/functions/scan');
-            const data = await response.json();
-
+            const res = await fetch('/.netlify/functions/scan');
+            const data = await res.json();
+            
             if (data.success) {
-                // 1. TOP 10 화면 업데이트
-                const listEl = document.getElementById('top10-list');
-                listEl.innerHTML = ''; 
-                data.top10.forEach((stock, index) => {
+                // [1] 종목 리스트 갱신
+                const listEl = document.getElementById('stockList');
+                listEl.innerHTML = '';
+                
+                data.top10.forEach((item, index) => {
+                    // 등락률 부호(+, -)에 따라 빨간색(up), 파란색(down) 클래스 부여
+                    const isUp = item.change && !item.change.includes('-');
+                    const changeClass = isUp ? 'up' : 'down';
+
                     listEl.innerHTML += `
-                        <div class="rank-item">
-                            <span class="rank-number">${index + 1}</span>
-                            <span class="stock-name">${stock.name}</span>
-                            <span class="score">점수 ${stock.score}</span>
+                        <div class="stock-item">
+                            <div class="stock-info">
+                                <span class="rank">${index + 1}</span>
+                                <span class="name">${item.name}</span>
+                            </div>
+                            <div class="stock-meta">
+                                <div class="price-row">
+                                    <span class="price">${item.price}</span>
+                                    <!-- 📊 실시간 등락률 추가 장착 완료 -->
+                                    <span class="change ${changeClass}">${item.change || ''}</span>
+                                </div>
+                                <div class="score-badge">점수 ${item.score}</div>
+                            </div>
                         </div>
                     `;
                 });
 
-                // 2. AI 판단 화면 업데이트
-                document.getElementById('ai-decision').textContent = data.ai.decision;
-                document.getElementById('ai-target').textContent = data.ai.target;
-                document.getElementById('ai-confidence').textContent = data.ai.confidence;
+                // [2] AI 판단 영역 갱신
+                document.getElementById('aiDecision').innerText = data.ai.decision;
+                document.getElementById('aiTarget').innerText = data.ai.target;
+                document.getElementById('aiConf').innerText = data.ai.confidence;
                 
-                const reasonsEl = document.getElementById('ai-reasons');
-                reasonsEl.innerHTML = '';
-                data.ai.reasons.forEach(reason => {
-                    reasonsEl.innerHTML += `<li>${reason}</li>`;
-                });
+                const reasonsEl = document.getElementById('aiReasons');
+                reasonsEl.innerHTML = data.ai.reasons.map(r => `<li>${r}</li>`).join('');
             }
-        } catch (error) {
-            console.error("데이터 가져오기 실패:", error);
+        } catch (err) {
+            console.error("데이터 연동 오류:", err);
         }
     }
 
-    // 처음 접속했을 때 바로 데이터 가져오기
+    // 초기 실행 및 30초마다 무한 반복 스캔
     fetchScanData();
-
-    // 30초 카운트다운 타이머
-    setInterval(() => {
-        timeLeft--;
-        if (timeLeft < 0) {
-            timeLeft = 30;
-            fetchScanData(); // 0초가 되면 백엔드에 새 데이터 요청
-        }
-        timerEl.textContent = timeLeft;
-    }, 1000);
+    setInterval(fetchScanData, 30500);
 </script>
 
 </body>
