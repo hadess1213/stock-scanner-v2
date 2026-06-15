@@ -6,12 +6,10 @@ exports.handler = async function(event, context) {
         { symbol: "000660.KS", name: "🇰🇷 SK하이닉스", isKr: true },
         { symbol: "086520.KQ", name: "🇰🇷 에코프로", isKr: true },
         { symbol: "247540.KQ", name: "🇰🇷 에코프로비엠", isKr: true },
-        { symbol: "005380.KS", name: "🇰🇷 현대차", isKr: true },
         { symbol: "TSLA", name: "🇺🇸 테슬라", isKr: false },
         { symbol: "NVDA", name: "🇺🇸 엔비디아", isKr: false },
-        { symbol: "AAPL", name: "🇺🇸 애플", isKr: false },
-        { symbol: "TQQQ", name: "🇺🇸 TQQQ (나스닥 3배)", isKr: false },
-        { symbol: "SOXL", name: "🇺🇸 SOXL (반도체 3배)", isKr: false }
+        { symbol: "TQQQ", name: "🇺🇸 TQQQ (나스닥3배)", isKr: false },
+        { symbol: "SOXL", name: "🇺🇸 SOXL (반도체3배)", isKr: false }
     ];
 
     try {
@@ -20,112 +18,99 @@ exports.handler = async function(event, context) {
             method: 'GET',
             headers: {
                 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
-                'Accept': 'application/json',
-                'Accept-Language': 'ko-KR,ko;q=0.9',
-                'Cache-Control': 'no-cache'
+                'Accept': 'application/json'
             }
         });
 
-        if (!response.ok) return generateUltimateBackup(targetStocks);
+        if (!response.ok) return generateAdvancedData(targetStocks, true);
 
         const data = await response.json();
         const quoteResults = data.quoteResponse?.result || [];
-        if (quoteResults.length === 0) return generateUltimateBackup(targetStocks);
+        if (quoteResults.length === 0) return generateAdvancedData(targetStocks, true);
 
-        const finalStockList = targetStocks.map(stock => {
-            const realInfo = quoteResults.find(q => q.symbol === stock.symbol);
-            const changePercent = realInfo ? realInfo.regularMarketChangePercent : 0;
-            const currentPrice = realInfo ? realInfo.regularMarketPrice : 0;
-
-            let dantaScore = Math.floor(82 + (changePercent * 2.5));
-            if (dantaScore > 100) dantaScore = 100;
-            if (dantaScore < 0) dantaScore = 0;
-
-            const formattedPrice = stock.isKr ? currentPrice.toLocaleString() + "원" : "$" + currentPrice.toLocaleString();
-
-            return { name: stock.name, score: dantaScore, price: formattedPrice, change: (changePercent >= 0 ? "+" : "") + changePercent.toFixed(2) + "%" };
-        }).sort((a, b) => b.score - a.score);
-
-        const bestStock = finalStockList[0];
-
-        return {
-            statusCode: 200,
-            headers: { "Content-Type": "application/json; charset=utf-8" },
-            body: JSON.stringify({
-                success: true,
-                top10: finalStockList,
-                ai: {
-                    target: bestStock.name,
-                    decision: "실시간 돌파매매",
-                    confidence: 96,
-                    reasons: getTraderQuotes(bestStock.name, bestStock.change)
-                }
-            })
-        };
+        // 정식 데이터를 받아와 처리하는 분기
+        return generateAdvancedData(targetStocks, false, quoteResults);
 
     } catch (error) {
-        return generateUltimateBackup(targetStocks);
+        return generateAdvancedData(targetStocks, true);
     }
 };
 
-// 🛡️ 백업 연산 엔진 + 🔥 매운맛 단타 멘트 탑재
-function generateUltimateBackup(stocks) {
-    const backupList = stocks.map((s, idx) => {
-        const mockChange = (Math.random() * 14 - 6); // -6% ~ +8% 가상 연산
-        let dantaScore = Math.floor(83 + (mockChange * 2));
+// 📊 진짜 데이터와 백업 모드 모두를 아우르는 고성능 타점 마스터 연산 코어
+function generateAdvancedData(stocks, isBackupMode, realResults = []) {
+    const processedList = stocks.map((s) => {
+        let changePercent = 0;
+        let currentPrice = 0;
+
+        if (isBackupMode) {
+            // 백업 모드 시 실시간 난수 시뮬레이션 변동률 생성
+            changePercent = (Math.random() * 14 - 6);
+            let basePrice = 72000;
+            if (s.symbol.includes("000660")) basePrice = 183000;
+            if (s.symbol.includes("086520")) basePrice = 102000;
+            if (s.symbol.includes("247540")) basePrice = 178000;
+            if (s.symbol.includes("TSLA")) basePrice = 175;
+            if (s.symbol.includes("NVDA")) basePrice = 880;
+            if (s.symbol.includes("TQQQ")) basePrice = 58;
+            if (s.symbol.includes("SOXL")) basePrice = 42;
+            currentPrice = basePrice * (1 + (changePercent / 100));
+        } else {
+            const realInfo = realResults.find(q => q.symbol === s.symbol);
+            changePercent = realInfo ? realInfo.regularMarketChangePercent : 0;
+            currentPrice = realInfo ? realInfo.regularMarketPrice : 0;
+        }
+
+        let dantaScore = Math.floor(83 + (changePercent * 2));
         if (dantaScore > 100) dantaScore = 100;
         if (dantaScore < 0) dantaScore = 0;
 
-        let basePrice = 72000;
-        if (s.symbol.includes("000660")) basePrice = 183000;
-        if (s.symbol.includes("086520")) basePrice = 102000;
-        if (s.symbol.includes("247540")) basePrice = 178000;
-        if (s.symbol.includes("005380")) basePrice = 245000;
-        if (s.symbol.includes("TSLA")) basePrice = 175;
-        if (s.symbol.includes("NVDA")) basePrice = 880;
-        if (s.symbol.includes("AAPL")) basePrice = 172;
-        if (s.symbol.includes("TQQQ")) basePrice = 58;
-        if (s.symbol.includes("SOXL")) basePrice = 42;
+        // 🎯 [핵심] 현재가를 기준으로 단타 기법용 기술적 타점 계산 수식
+        let buyPrice, sellPrice, supportPrice;
+        
+        if (s.isKr) {
+            // 국장: 원화 단위 절사 규칙 반영 (눌림목 매수는 -1.5%, 익절은 +2.5%, 지지선은 -3%)
+            buyPrice = Math.floor((currentPrice * 0.985) / 10) * 10;
+            sellPrice = Math.floor((currentPrice * 1.025) / 10) * 10;
+            supportPrice = Math.floor((currentPrice * 0.97) / 10) * 10;
+        } else {
+            // 미장: 소수점 2자리 규격 반영
+            buyPrice = (currentPrice * 0.982);
+            sellPrice = (currentPrice * 1.03);
+            supportPrice = (currentPrice * 0.965);
+        }
 
-        const finalPrice = basePrice * (1 + (mockChange / 100));
-        const formattedPrice = s.isKr ? Math.floor(finalPrice).toLocaleString() + "원" : "$" + finalPrice.toFixed(2);
+        // 화폐 포맷팅 함수
+        const format = (val) => s.isKr ? Math.floor(val).toLocaleString() + "원" : "$" + val.toFixed(2);
 
-        return { name: s.name, score: dantaScore, price: formattedPrice, change: (mockChange >= 0 ? "+" : "") + mockChange.toFixed(2) + "%" };
+        // 💬 종목 상황별 단타 전략 맞춤형 멘트 주머니 생성
+        let stockComment = "";
+        if (changePercent >= 3) {
+            stockComment = `급등 신호 포착! 현재 추격 매수는 위험하며, 안내된 매수 권장가까지 거래량 줄어들며 눌려줄 때 진입이 베스트입니다.`;
+        } else if (changePercent >= 0 && changePercent < 3) {
+            stockComment = `안정적인 우상향 흐름입니다. 핵심 지지선 이탈 여부를 체크하면서 호가창 매수세 유입 시 분할 진입 타점입니다.`;
+        } else if (changePercent < 0 && changePercent > -3) {
+            stockComment = `정상적인 조정 범위(눌림목)입니다. 지지선 근처에서 아래꼬리가 물리며 지지받는 것을 확인하고 반등 시점을 노리세요.`;
+        } else {
+            stockComment = `과매도 구간 진입 중입니다. 단타 관점에서는 칼손절 물량이 출현하는 자리이므로 하방 경직성이 확보될 때까지 관망을 추천합니다.`;
+        }
+
+        return {
+            name: s.name,
+            score: dantaScore,
+            price: format(currentPrice),
+            change: (changePercent >= 0 ? "+" : "") + changePercent.toFixed(2) + "%",
+            targets: {
+                buy: format(buyPrice),
+                sell: format(sellPrice),
+                support: format(supportPrice)
+            },
+            comment: stockComment
+        };
     }).sort((a, b) => b.score - a.score);
-
-    const bestStock = backupList[0];
 
     return {
         statusCode: 200,
         headers: { "Content-Type": "application/json; charset=utf-8" },
-        body: JSON.stringify({
-            success: true,
-            top10: backupList,
-            ai: {
-                target: bestStock.name,
-                decision: "호가창 불타기 수급포착",
-                confidence: 91,
-                reasons: getTraderQuotes(bestStock.name, bestStock.change)
-            }
-        })
+        body: JSON.stringify({ success: true, top10: processedList })
     };
-}
-
-// 💬 단타 프로들의 주옥같은 실전 멘트 주머니 생성기
-function getTraderQuotes(targetName, changeRate) {
-    // 트레이더들의 주옥같은 멘트들 리스트
-    const quotesPool = [
-        `현재 [${targetName}]에 시장의 모든 돈이 몰리고 있습니다. 거래대금 폭발 중!`,
-        `당일 등락률 ${changeRate} 돌파! 전형적인 거래량 실린 장대양봉 패턴입니다.`,
-        "손절선 딱 잡고 가야 하는 자리입니다. 뇌동매매 절대 금지, 추격 매수는 3분봉 확인 후 진입!",
-        "나스닥 선물 지수 변동성이 심상치 않습니다. 미장 형님들의 무빙을 주시하세요.",
-        "지금 호가창 물량 먹어치우는 속도가 개미가 아닙니다. 주포 형님들 롤링 시작된 듯.",
-        `눌림목 타점 노리던 분들은 지금이 기회일 수 있습니다. 단, -2% 깨지면 칼손절 준비.`,
-        "레버리지 상품들 수급 꼬이는 거 보니 오늘 밤 미장 꽤나 다이내믹하겠네요. 안전벨트 매세요.",
-        "오늘 국장 주도주는 확실히 이쪽 섹터네요. 대장주만 패야 살아남습니다."
-    ];
-
-    // 무작위로 섞어서 상위 3개 멘트만 추출해서 화면에 띄워줍니다.
-    const shuffled = quotesPool.sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, 3);
 }
