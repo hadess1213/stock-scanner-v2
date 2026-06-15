@@ -1,37 +1,18 @@
-const axios = require('axios');
-const cheerio = require('cheerio');
-
 module.exports = async (req, res) => {
-    // 1. CORS 설정 (GitHub Pages에서의 호출 허용)
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
 
     try {
-        // 예시로 금융 사이트 URL (수집하려는 타겟 URL로 변경하세요)
-        const targetUrl = 'https://finance.naver.com/sise/sise_quant.naver'; 
-        
-        const { data } = await axios.get(targetUrl, {
-            headers: { 'User-Agent': 'Mozilla/5.0' }
-        });
+        // 내장 fetch 사용 (라이브러리 설치 불필요)
+        const response = await fetch('https://finance.naver.com/sise/sise_quant.naver');
+        const data = await response.text();
 
-        const $ = cheerio.load(data);
-        const results = [];
-
-        // 여기에 실제 데이터를 긁어오는 로직 (예시: 종목명 추출)
-        $('.tltle').each((i, el) => {
-            results.push($(el).text().trim());
-        });
-
-        // 2. 결과 반환
+        // 단순 테스트를 위해 데이터가 잘 받아졌는지 확인만 함
         res.status(200).json({
             success: true,
-            data: results
+            message: "데이터 수신 성공",
+            length: data.length
         });
     } catch (error) {
-        // 3. 에러 발생 시 처리
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
+        res.status(500).json({ success: false, error: error.message });
     }
 };
