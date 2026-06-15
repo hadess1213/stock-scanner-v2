@@ -20,52 +20,21 @@
             margin: 0;
             padding: 16px;
         }
-        .container {
-            max-width: 500px;
-            margin: 0 auto;
-        }
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid #334155;
-        }
+        .container { max-width: 500px; margin: 0 auto; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #334155; }
         .logo { font-weight: bold; font-size: 1.2rem; }
         .timer { font-size: 0.9rem; color: #94a3b8; }
-        
-        .section {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 16px;
-            margin-top: 16px;
-        }
+        .section { background: var(--card-bg); border-radius: 12px; padding: 16px; margin-top: 16px; }
         h2 { font-size: 1.1rem; margin-top: 0; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
-        
-        /* TOP 10 스타일 */
-        .rank-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #334155;
-        }
+        .rank-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #334155; }
         .rank-item:last-child { border: none; }
         .rank-number { font-weight: bold; color: var(--primary); width: 24px; }
         .stock-name { flex-grow: 1; font-weight: 500; }
         .score { background: #2d3748; padding: 2px 8px; border-radius: 6px; font-size: 0.85rem; color: #f59e0b; }
-
-        /* 조건 스타일 */
-        .cond-badge {
-            background: #334155; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; display: inline-block; margin: 4px;
-        }
-
-        /* AI 판단 스타일 */
-        .ai-box {
-            border: 2px solid var(--success);
-            background: rgba(34, 197, 94, 0.1);
-        }
+        .cond-badge { background: #334155; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; display: inline-block; margin: 4px; }
+        .ai-box { border: 2px solid var(--success); background: rgba(34, 197, 94, 0.1); }
         .reason-list { margin: 8px 0 0 0; padding-left: 20px; font-size: 0.9rem; color: #cbd5e1; }
+        .loading { text-align: center; color: #94a3b8; padding: 20px; }
     </style>
 </head>
 <body>
@@ -78,20 +47,8 @@
 
     <div class="section">
         <h2>🔥 오늘의 단타 TOP 10</h2>
-        <div class="rank-item">
-            <span class="rank-number">1</span>
-            <span class="stock-name">삼성전자</span>
-            <span class="score">점수 94</span>
-        </div>
-        <div class="rank-item">
-            <span class="rank-number">2</span>
-            <span class="stock-name">SK하이닉스</span>
-            <span class="score">점수 91</span>
-        </div>
-        <div class="rank-item">
-            <span class="rank-number">3</span>
-            <span class="stock-name">알테오젠</span>
-            <span class="score">점수 88</span>
+        <div id="top10-list">
+            <div class="loading">데이터 분석 중...</div>
         </div>
     </div>
 
@@ -108,26 +65,63 @@
     </div>
 
     <div class="section ai-box">
-        <h2>⚡ AI 매수 판단: <span style="color:var(--success)">매수 가능</span></h2>
-        <div style="font-size: 0.95rem; font-weight: bold;">신뢰도: 84%</div>
-        <ul class="reason-list">
-            <li>거래량 증가</li>
-            <li>상승 추세 유지</li>
-            <li>지지선 근처</li>
+        <h2>⚡ AI 매수 판단: <span id="ai-decision" style="color:var(--success)">분석 중</span></h2>
+        <div style="font-size: 0.95rem; font-weight: bold;">추천 종목: <span id="ai-target">-</span> (<span id="ai-confidence">0</span>%)</div>
+        <ul class="reason-list" id="ai-reasons">
+            <li>데이터 수집 중...</li>
         </ul>
     </div>
 </div>
 
 <script>
-    // 30초 타이머 작동 시뮬레이션
-    let timeLeft = 30;
     const timerEl = document.getElementById('countdown');
-    
+    let timeLeft = 30;
+
+    // Netlify 백엔드 함수에서 데이터를 가져오는 함수
+    async function fetchScanData() {
+        try {
+            const response = await fetch('/.netlify/functions/scan');
+            const data = await response.json();
+
+            if (data.success) {
+                // 1. TOP 10 화면 업데이트
+                const listEl = document.getElementById('top10-list');
+                listEl.innerHTML = ''; 
+                data.top10.forEach((stock, index) => {
+                    listEl.innerHTML += `
+                        <div class="rank-item">
+                            <span class="rank-number">${index + 1}</span>
+                            <span class="stock-name">${stock.name}</span>
+                            <span class="score">점수 ${stock.score}</span>
+                        </div>
+                    `;
+                });
+
+                // 2. AI 판단 화면 업데이트
+                document.getElementById('ai-decision').textContent = data.ai.decision;
+                document.getElementById('ai-target').textContent = data.ai.target;
+                document.getElementById('ai-confidence').textContent = data.ai.confidence;
+                
+                const reasonsEl = document.getElementById('ai-reasons');
+                reasonsEl.innerHTML = '';
+                data.ai.reasons.forEach(reason => {
+                    reasonsEl.innerHTML += `<li>${reason}</li>`;
+                });
+            }
+        } catch (error) {
+            console.error("데이터 가져오기 실패:", error);
+        }
+    }
+
+    // 처음 접속했을 때 바로 데이터 가져오기
+    fetchScanData();
+
+    // 30초 카운트다운 타이머
     setInterval(() => {
         timeLeft--;
         if (timeLeft < 0) {
             timeLeft = 30;
-            // 여기에 나중에 진짜 데이터 가져오는 함수를 넣을 겁니다.
+            fetchScanData(); // 0초가 되면 백엔드에 새 데이터 요청
         }
         timerEl.textContent = timeLeft;
     }, 1000);
