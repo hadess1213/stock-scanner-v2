@@ -1,6 +1,5 @@
 {
-  "dependencies": {
-    "axios": "latest",
-    "cheerio": "latest"
-  }
+  "rewrites": [
+    { "source": "/api/scan", "destination": "/api/scan.js" }
+  ]
 }
