@@ -3,16 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>실시간 종목 스캔 V2</title>
+    <title>실시간 종목 스캔 V2 - 타점 매니저</title>
     <style>
         :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
+            --bg-color: #0b0f19;
+            --card-bg: #151f32;
+            --inner-bg: #1e2d4a;
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
-            --accent-up: #ef4444;   /* 상승 빨간색 */
-            --accent-down: #3b82f6; /* 하락 파란색 */
-            --ai-gold: #eab308;
+            --accent-up: #f43f5e;   /* 강렬한 매수 빨강 */
+            --accent-down: #3b82f6; /* 하락 파랑 */
+            --ai-gold: #f59e0b;
+            --neon-green: #10b981;  /* 매수 타점 색상 */
         }
         body {
             background-color: var(--bg-color);
@@ -25,70 +27,92 @@
         }
         .container {
             width: 100%;
-            max-width: 480px;
+            max-width: 520px;
             background: var(--card-bg);
             border-radius: 16px;
             padding: 24px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
         }
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #334155;
+            border-bottom: 1px solid #24334d;
             padding-bottom: 12px;
             margin-bottom: 20px;
         }
         .header h1 { font-size: 20px; margin: 0; }
         .timer { font-size: 14px; color: var(--ai-gold); font-weight: bold; }
         
-        .section-title { font-size: 16px; color: var(--text-muted); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+        .section-title { font-size: 16px; color: var(--text-muted); margin-bottom: 16px; font-weight: bold; }
         
-        .stock-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+        .stock-list { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
         .stock-item {
+            background: rgba(255,255,255,0.01);
+            border-radius: 14px;
+            border: 1px solid #24334d;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .stock-main-info {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: rgba(255,255,255,0.03);
-            padding: 14px 16px;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.05);
         }
         .stock-info { display: flex; align-items: center; gap: 12px; }
-        .rank { font-weight: bold; color: var(--ai-gold); width: 20px; }
-        .name { font-weight: 600; }
+        .rank { font-weight: bold; color: var(--ai-gold); font-size: 16px; }
+        .name { font-weight: bold; font-size: 16px; }
         
         .stock-meta { text-align: right; }
-        .price-row { display: flex; items: center; gap: 8px; justify-content: flex-end; }
-        .price { font-weight: bold; font-size: 15px; }
-        /* 등락률 스타일 지정을 위한 클래스 */
-        .change { font-size: 13px; font-weight: bold; }
+        .price-row { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+        .price { font-weight: bold; font-size: 16px; }
+        .change { font-size: 13px; font-weight: bold; padding: 2px 6px; border-radius: 4px; background: rgba(0,0,0,0.2); }
         .up { color: var(--accent-up); }
         .down { color: var(--accent-down); }
-        .score-badge { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        
+        /* 🔥 실전 단타 타점 가이드 보드 스타일 */
+        .tardget-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            background: var(--inner-bg);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 12px;
+        }
+        .target-box { display: flex; flex-direction: column; gap: 4px; }
+        .target-label { color: var(--text-muted); font-size: 11px; }
+        .target-val { font-weight: bold; font-size: 13px; }
+        .val-buy { color: var(--neon-green); }
+        .val-sell { color: var(--accent-up); }
+        .val-support { color: #60a5fa; }
+
+        /* 💬 종목별 한줄 평 멘트 스타일 */
+        .stock-comment {
+            font-size: 12.5px;
+            color: #cbd5e1;
+            background: rgba(255,255,255,0.03);
+            padding: 8px 12px;
+            border-radius: 6px;
+            border-left: 3px solid var(--ai-gold);
+            line-height: 1.4;
+        }
 
         .condition-box {
             background: rgba(255,255,255,0.02);
             border-radius: 12px;
             padding: 14px;
-            margin-bottom: 24px;
             font-size: 13px;
             display: flex;
             flex-direction: column;
             gap: 8px;
+            border: 1px solid rgba(255,255,255,0.05);
         }
         .cond-item { display: flex; justify-content: space-between; color: var(--text-muted); }
         .cond-item span:last-child { color: var(--text-main); font-weight: 500; }
-
-        .ai-box {
-            border: 1px solid rgba(234, 179, 8, 0.3);
-            background: rgba(234, 179, 8, 0.05);
-            border-radius: 12px;
-            padding: 16px;
-        }
-        .ai-title { color: var(--ai-gold); font-weight: bold; font-size: 15px; margin-bottom: 8px; }
-        .ai-recommend { font-size: 16px; font-weight: bold; margin-bottom: 12px; }
-        .ai-reasons { font-size: 13px; color: var(--text-muted); padding-left: 18px; margin: 0; display: flex; flex-direction: column; gap: 6px; }
     </style>
 </head>
 <body>
@@ -99,22 +123,13 @@
         <div class="timer" id="timer">🔄 30초 뒤 갱신</div>
     </div>
 
-    <div class="section-title">🔥 오늘의 단타 TOP 5</div>
+    <div class="section-title">🔥 실시간 글로벌 단타 레이더 (개별 타점 가이드)</div>
     <div class="stock-list" id="stockList">
-        <!-- 자바스크립트가 여기에 종목들을 채워넣습니다 -->
-    </div>
+        </div>
 
     <div class="condition-box">
         <div class="cond-item"><span>🚀 급등주 검색 조건</span><span>상승률 +3% 이상 거래량 증가</span></div>
         <div class="cond-item"><span>💎 눌림목 검색 조건</span><span>전고점 돌파 후 -2% ~ -5% 조정</span></div>
-    </div>
-
-    <div class="ai-box">
-        <div class="ai-title">⚡ AI 매수 판단 : <span id="aiDecision">스캔중</span></div>
-        <div class="ai-recommend">추천 종목: <span id="aiTarget">-</span> (<span id="aiConf">0</span>%)</div>
-        <ul class="ai-reasons" id="aiReasons">
-            <li>데이터 수집 엔진 가동 중...</li>
-        </ul>
     </div>
 </div>
 
@@ -122,61 +137,67 @@
     let countdown = 30;
     const timerEl = document.getElementById('timer');
 
-    // 30초 카운트다운 전광판 로직
     setInterval(() => {
         countdown--;
         if (countdown < 0) countdown = 30;
         timerEl.innerText = `🔄 ${countdown}초 뒤 갱신`;
     }, 1000);
 
-    // 백엔드(Netlify Function)에서 실시간 주가 정보를 받아오는 함수
     async function fetchScanData() {
         try {
             const res = await fetch('/.netlify/functions/scan');
             const data = await res.json();
             
             if (data.success) {
-                // [1] 종목 리스트 갱신
                 const listEl = document.getElementById('stockList');
                 listEl.innerHTML = '';
                 
                 data.top10.forEach((item, index) => {
-                    // 등락률 부호(+, -)에 따라 빨간색(up), 파란색(down) 클래스 부여
                     const isUp = item.change && !item.change.includes('-');
                     const changeClass = isUp ? 'up' : 'down';
 
                     listEl.innerHTML += `
                         <div class="stock-item">
-                            <div class="stock-info">
-                                <span class="rank">${index + 1}</span>
-                                <span class="name">${item.name}</span>
-                            </div>
-                            <div class="stock-meta">
-                                <div class="price-row">
-                                    <span class="price">${item.price}</span>
-                                    <!-- 📊 실시간 등락률 추가 장착 완료 -->
-                                    <span class="change ${changeClass}">${item.change || ''}</span>
+                            <div class="stock-main-info">
+                                <div class="stock-info">
+                                    <span class="rank">${index + 1}</span>
+                                    <span class="name">${item.name}</span>
                                 </div>
-                                <div class="score-badge">점수 ${item.score}</div>
+                                <div class="stock-meta">
+                                    <div class="price-row">
+                                        <span class="price">${item.price}</span>
+                                        <span class="change ${changeClass}">${item.change || ''}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="tardget-board">
+                                <div class="target-box">
+                                    <span class="target-label">🎯 매수 권장가</span>
+                                    <span class="target-val val-buy">${item.targets.buy}</span>
+                                </div>
+                                <div class="target-box">
+                                    <span class="target-label">🛑 익절 목표가</span>
+                                    <span class="target-val val-sell">${item.targets.sell}</span>
+                                </div>
+                                <div class="target-box">
+                                    <span class="target-label">⚓ 핵심 지지선</span>
+                                    <span class="target-val val-support">${item.targets.support}</span>
+                                </div>
+                            </div>
+
+                            <div class="stock-comment">
+                                💡 ${item.comment}
                             </div>
                         </div>
                     `;
                 });
-
-                // [2] AI 판단 영역 갱신
-                document.getElementById('aiDecision').innerText = data.ai.decision;
-                document.getElementById('aiTarget').innerText = data.ai.target;
-                document.getElementById('aiConf').innerText = data.ai.confidence;
-                
-                const reasonsEl = document.getElementById('aiReasons');
-                reasonsEl.innerHTML = data.ai.reasons.map(r => `<li>${r}</li>`).join('');
             }
         } catch (err) {
             console.error("데이터 연동 오류:", err);
         }
     }
 
-    // 초기 실행 및 30초마다 무한 반복 스캔
     fetchScanData();
     setInterval(fetchScanData, 30500);
 </script>
