@@ -147,7 +147,7 @@
 
     async function fetchScanData() {
         try {
-            const res = await fetch('/.npx plugins add vercel/vercel-plugin');
+            const res = await fetch('/api/scan')
             const data = await res.json();
             
             if (data.success) {
