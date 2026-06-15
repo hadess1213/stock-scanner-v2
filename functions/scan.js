@@ -1,5 +1,4 @@
 // functions/scan.js
-const fetch = require('node-fetch');
 
 exports.handler = async function(event, context) {
     const clientId = process.env.TOSS_CLIENT_ID;
@@ -13,7 +12,7 @@ exports.handler = async function(event, context) {
         // [1단계] 토스증권 공식 규격에 맞춰 암호화 키 생성 (Basic Auth)
         const authKey = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
 
-        // [2단계] 토스증권 공식 토큰 발급 Endpoint로 요청
+        // [2단계] Netlify 내장 fetch 기능을 사용하여 토스 토큰 발급 요청
         let tokenResponse;
         try {
             tokenResponse = await fetch('https://openapi.tossinvest.com/oauth2/token', {
@@ -30,11 +29,11 @@ exports.handler = async function(event, context) {
             throw new Error(`토스 인증서버망 접속 실패: ${err.message}`);
         }
 
-        // 만약 키 자체가 틀렸다면 502로 뻗지 않고 화면에 실패 이유를 알려줍니다.
+        // 키가 틀렸을 때 처리
         if (!tokenResponse.ok) {
             const errStatusCode = tokenResponse.status;
             if (errStatusCode === 401) {
-                throw new Error("토스 API 인증 실패 (401): Netlify 입력한 Client ID / Secret 값이 정확한지 다시 확인해주세요.");
+                throw new Error("토스 API 인증 실패 (401): Netlify에 입력한 Client ID / Secret 값이 정확한지 다시 확인해주세요.");
             } else {
                 throw new Error(`토스 서버 거절 (코드 ${errStatusCode})`);
             }
@@ -57,7 +56,7 @@ exports.handler = async function(event, context) {
             throw new Error(`주가 시세 데이터 요청 실패: ${err.message}`);
         }
 
-        // 만약 실시간 시세 주소가 점검 중이거나 살짝 다를 경우 처리
+        // 만약 주소가 점검 중이거나 살짝 다를 경우 처리
         if (!marketResponse.ok) {
             throw new Error(`시세조회 실패: 상태코드 ${marketResponse.status} (API 세부 주소 확인 필요)`);
         }
@@ -85,7 +84,7 @@ exports.handler = async function(event, context) {
         };
 
     } catch (error) {
-        // 예외가 생기더라도 502 에러를 방지하고 화면 하단에 에러 텍스트를 친절히 띄웁니다.
+        // 부품 에러가 아니면 이제 여기서 안전하게 예외를 붙잡아 화면에 한글로 띄워줍니다.
         return sendErrorToUI(error.message);
     }
 };
