@@ -1,7 +1,6 @@
 {
-  "buildCommand": null,
-  "outputDirectory": ".",
-  "rewrites": [
-    { "source": "/api/scan", "destination": "/api/scan.js" }
-  ]
+  "dependencies": {
+    "axios": "latest",
+    "cheerio": "latest"
+  }
 }
