@@ -113,3 +113,8 @@ function generateAdvancedDantaCore(stocks, isBackupMode, realResults = []) {
         body: JSON.stringify({ success: true, top10: processedList })
     };
 }
+// api/scan.js 파일 상단에 추가
+module.exports = (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*'); // 모든 곳에서 접속 허용
+  // ... 기존 코드 ...
+}
