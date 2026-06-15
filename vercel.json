@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "functions/*.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "routes": [
+    { "src": "/api/scan", "dest": "functions/scan.js" }
+  ]
+}
