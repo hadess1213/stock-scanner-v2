@@ -1,72 +1,137 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>단타 스캐너 V2</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>실시간 단타 스캔 V2</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --primary: #3b82f6;
+            --accent: #ef4444;
+            --success: #22c55e;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 16px;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #334155;
+        }
+        .logo { font-weight: bold; font-size: 1.2rem; }
+        .timer { font-size: 0.9rem; color: #94a3b8; }
+        
+        .section {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+        h2 { font-size: 1.1rem; margin-top: 0; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+        
+        /* TOP 10 스타일 */
+        .rank-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #334155;
+        }
+        .rank-item:last-child { border: none; }
+        .rank-number { font-weight: bold; color: var(--primary); width: 24px; }
+        .stock-name { flex-grow: 1; font-weight: 500; }
+        .score { background: #2d3748; padding: 2px 8px; border-radius: 6px; font-size: 0.85rem; color: #f59e0b; }
 
-  <link rel="manifest" href="manifest.json">
+        /* 조건 스타일 */
+        .cond-badge {
+            background: #334155; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; display: inline-block; margin: 4px;
+        }
 
-  <style>
-    body{
-      margin:0;
-      background:#111;
-      color:white;
-      font-family:sans-serif;
-    }
-
-    header{
-      padding:20px;
-      text-align:center;
-      font-size:24px;
-      font-weight:bold;
-    }
-
-    .card{
-      margin:10px;
-      padding:15px;
-      border-radius:12px;
-      background:#1e1e1e;
-    }
-
-    .stock{
-      display:flex;
-      justify-content:space-between;
-      margin:8px 0;
-    }
-  </style>
+        /* AI 판단 스타일 */
+        .ai-box {
+            border: 2px solid var(--success);
+            background: rgba(34, 197, 94, 0.1);
+        }
+        .reason-list { margin: 8px 0 0 0; padding-left: 20px; font-size: 0.9rem; color: #cbd5e1; }
+    </style>
 </head>
 <body>
 
-<header>
-🔥 단타 스캐너 V2
-</header>
+<div class="container">
+    <header>
+        <div class="logo">📈 실시간 종목 스캔 <span style="font-size:0.8rem; color:var(--primary)">V2</span></div>
+        <div class="timer">🔄 <span id="countdown">30</span>초 뒤 갱신</div>
+    </header>
 
-<div class="card">
-  <h2>오늘의 추천 TOP10</h2>
+    <div class="section">
+        <h2>🔥 오늘의 단타 TOP 10</h2>
+        <div class="rank-item">
+            <span class="rank-number">1</span>
+            <span class="stock-name">삼성전자</span>
+            <span class="score">점수 94</span>
+        </div>
+        <div class="rank-item">
+            <span class="rank-number">2</span>
+            <span class="stock-name">SK하이닉스</span>
+            <span class="score">점수 91</span>
+        </div>
+        <div class="rank-item">
+            <span class="rank-number">3</span>
+            <span class="stock-name">알테오젠</span>
+            <span class="score">점수 88</span>
+        </div>
+    </div>
 
-  <div class="stock">
-    <span>삼성전자</span>
-    <span>94점</span>
-  </div>
+    <div class="section">
+        <h2>🚀 급등주 검색 조건</h2>
+        <div class="cond-badge">상승률 +3% 이상</div>
+        <div class="cond-badge">거래량 증가</div>
+    </div>
 
-  <div class="stock">
-    <span>NVDA</span>
-    <span>92점</span>
-  </div>
+    <div class="section">
+        <h2>💎 눌림목 검색 조건</h2>
+        <div class="cond-badge">전고점 돌파 후</div>
+        <div class="cond-badge">-2% ~ -5% 조정</div>
+    </div>
 
-  <div class="stock">
-    <span>PLTR</span>
-    <span>89점</span>
-  </div>
+    <div class="section ai-box">
+        <h2>⚡ AI 매수 판단: <span style="color:var(--success)">매수 가능</span></h2>
+        <div style="font-size: 0.95rem; font-weight: bold;">신뢰도: 84%</div>
+        <ul class="reason-list">
+            <li>거래량 증가</li>
+            <li>상승 추세 유지</li>
+            <li>지지선 근처</li>
+        </ul>
+    </div>
 </div>
 
-<div class="card">
-  <h2>종목 분석</h2>
-  <input
-    style="width:100%;padding:10px"
-    placeholder="005930 또는 NVDA">
-</div>
+<script>
+    // 30초 타이머 작동 시뮬레이션
+    let timeLeft = 30;
+    const timerEl = document.getElementById('countdown');
+    
+    setInterval(() => {
+        timeLeft--;
+        if (timeLeft < 0) {
+            timeLeft = 30;
+            // 여기에 나중에 진짜 데이터 가져오는 함수를 넣을 겁니다.
+        }
+        timerEl.textContent = timeLeft;
+    }, 1000);
+</script>
 
 </body>
 </html>
