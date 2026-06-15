@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>단타 스캐너 V2</title>
+
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    body{
+      margin:0;
+      background:#111;
+      color:white;
+      font-family:sans-serif;
+    }
+
+    header{
+      padding:20px;
+      text-align:center;
+      font-size:24px;
+      font-weight:bold;
+    }
+
+    .card{
+      margin:10px;
+      padding:15px;
+      border-radius:12px;
+      background:#1e1e1e;
+    }
+
+    .stock{
+      display:flex;
+      justify-content:space-between;
+      margin:8px 0;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+🔥 단타 스캐너 V2
+</header>
+
+<div class="card">
+  <h2>오늘의 추천 TOP10</h2>
+
+  <div class="stock">
+    <span>삼성전자</span>
+    <span>94점</span>
+  </div>
+
+  <div class="stock">
+    <span>NVDA</span>
+    <span>92점</span>
+  </div>
+
+  <div class="stock">
+    <span>PLTR</span>
+    <span>89점</span>
+  </div>
+</div>
+
+<div class="card">
+  <h2>종목 분석</h2>
+  <input
+    style="width:100%;padding:10px"
+    placeholder="005930 또는 NVDA">
+</div>
+
+</body>
+</html>
