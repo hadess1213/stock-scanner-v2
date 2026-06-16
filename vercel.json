@@ -1,5 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/scan", "destination": "/api/scan.js" }
+    { "source": "/api/token", "destination": "/api/token.js" },
+    { "source": "/api/scan",  "destination": "/api/scan.js"  }
   ]
 }
