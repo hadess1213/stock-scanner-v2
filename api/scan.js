@@ -2,7 +2,7 @@ module.exports = async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
 
     // Finnhub API 키를 입력하세요
-    const FINNHUB_KEY = '본인의_API_키를_여기에_입력';
+    const FINNHUB_KEY = 'd8o1n7hr01qvtr6lt5sgd8o1n7hr01qvtr6lt5t0';
     const SYMBOL = 'AAPL'; // 원하는 종목 코드
     const url = `https://finnhub.io/api/v1/quote?symbol=${SYMBOL}&token=${FINNHUB_KEY}`;
 
