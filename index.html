@@ -41,13 +41,23 @@
     </div>
 
     <script>
+    function updatePrice() {
         fetch('https://stock-scanner-v2-zwzk.vercel.app/api/scan')
             .then(response => response.json())
             .then(data => {
                 if(data.success) {
                     document.getElementById('price-display').innerText = '$' + data.price;
+                    console.log('가격 업데이트 완료:', data.price);
                 }
-            });
-    </script>
+            })
+            .catch(err => console.error('업데이트 실패:', err));
+    }
+
+    // 페이지 접속 시 즉시 실행
+    updatePrice();
+
+    // 30초(30000ms)마다 updatePrice 함수 반복 실행
+    setInterval(updatePrice, 30000);
+</script>
 </body>
 </html>
