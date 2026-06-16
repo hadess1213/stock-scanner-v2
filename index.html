@@ -1,34 +1,53 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
+    <meta charset="UTF-8">
     <style>
-        /* 위에서 만든 CSS 스타일 */
+        body {
+            background-color: #0f172a; /* 아주 어두운 파란색 배경 */
+            color: #ffffff;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            padding-top: 50px;
+        }
+        /* 카드 디자인 */
+        .stock-card {
+            background-color: #1e293b;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            text-align: center;
+            width: 300px;
+        }
+        .price-text {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #10b981; /* 초록색 가격 */
+            margin: 10px 0;
+        }
+        .symbol-text {
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
     </style>
 </head>
 <body>
 
-    <table id="stock-table">
-        <thead>
-            <tr>
-                <th>종목</th>
-                <th>현재가</th>
-            </tr>
-        </thead>
-        <tbody id="stock-body">
-            </tbody>
-    </table>
+    <div class="stock-card">
+        <div class="symbol-text">Apple Inc. (AAPL)</div>
+        <div class="price-text" id="price-display">로딩 중...</div>
+        <div style="font-size: 0.8rem; color: #64748b;">실시간 시세</div>
+    </div>
 
     <script>
-        // API 호출
         fetch('https://stock-scanner-v2-zwzk.vercel.app/api/scan')
             .then(response => response.json())
             .then(data => {
-                const tbody = document.getElementById('stock-body');
-                if(tbody) {
-                    tbody.innerHTML = `<tr><td>Apple (AAPL)</td><td>$${data.price}</td></tr>`;
+                if(data.success) {
+                    document.getElementById('price-display').innerText = '$' + data.price;
                 }
-            })
-            .catch(err => console.error(err));
+            });
     </script>
 </body>
 </html>
