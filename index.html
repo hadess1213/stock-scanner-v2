@@ -1,25 +1,26 @@
-<table id="stock-table">
-    <thead>
-        <tr>
-            <th>종목</th>
-            <th>현재가</th>
-        </tr>
-    </thead>
-    <tbody id="stock-body">
-        </tbody>
-</table>
+<style>
+    /* 표 전체 스타일 */
+    #stock-table {
+        width: 80%;
+        max-width: 500px;
+        margin: 20px auto;
+        border-collapse: collapse; /* 테두리 겹침 방지 */
+        background-color: #1a1a2e; /* 다크 모드 배경색 */
+        color: white;
+        border-radius: 10px;
+        overflow: hidden;
+    }
 
-<script>
-    fetch('https://stock-scanner-v2-zwzk.vercel.app/api/scan')
-        .then(response => response.json())
-        .then(data => {
-            const tbody = document.getElementById('stock-body');
-            // 받아온 데이터를 테이블 행으로 추가
-            tbody.innerHTML = `
-                <tr>
-                    <td>Apple (AAPL)</td>
-                    <td>$${data.price}</td>
-                </tr>
-            `;
-        });
-</script>
+    /* 제목과 내용 패딩 */
+    #stock-table th, #stock-table td {
+        padding: 15px;
+        text-align: center;
+        border-bottom: 1px solid #333;
+    }
+
+    /* 제목 강조 */
+    #stock-table th {
+        background-color: #16213e;
+        font-weight: bold;
+    }
+</style>
