@@ -1,22 +1,25 @@
-<div id="price-container">
-    현재 가격: <span id="price-display">로딩 중...</span>
-</div>
+<table id="stock-table">
+    <thead>
+        <tr>
+            <th>종목</th>
+            <th>현재가</th>
+        </tr>
+    </thead>
+    <tbody id="stock-body">
+        </tbody>
+</table>
 
 <script>
-    // API에서 데이터를 가져오는 코드
     fetch('https://stock-scanner-v2-zwzk.vercel.app/api/scan')
         .then(response => response.json())
         .then(data => {
-            console.log(data); // 데이터 확인용
-            if(data.success) {
-                // 가격이 성공적으로 들어오면 화면에 표시
-                document.getElementById('price-display').innerText = '$' + data.price;
-            } else {
-                document.getElementById('price-display').innerText = '데이터 없음';
-            }
-        })
-        .catch(err => {
-            console.error('에러 발생:', err);
-            document.getElementById('price-display').innerText = '불러오기 실패';
+            const tbody = document.getElementById('stock-body');
+            // 받아온 데이터를 테이블 행으로 추가
+            tbody.innerHTML = `
+                <tr>
+                    <td>Apple (AAPL)</td>
+                    <td>$${data.price}</td>
+                </tr>
+            `;
         });
 </script>
